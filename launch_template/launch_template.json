@@ -1,0 +1,53 @@
+{
+  "IamInstanceProfile": {
+    "Arn": "arn:aws:iam::672421063948:instance-profile/sc2_service_name"
+  },
+  "BlockDeviceMappings": [
+    {
+      "DeviceName": "/dev/sda1",
+      "Ebs": {
+        "Encrypted": false,
+        "DeleteOnTermination": true,
+        "VolumeSize": 8,
+        "VolumeType": "gp3"
+      }
+    }
+  ],
+  "NetworkInterfaces": [
+    {
+      "DeviceIndex": 0,
+      "AssociatePublicIpAddress": true,
+      "Groups": [
+        "{sg_id}"
+      ],
+      "DeleteOnTermination": true
+    }
+  ],
+  "ImageId": "{ami_id}",
+  "InstanceType": "t3.micro",
+  "KeyName": "{key_name}",
+  "TagSpecifications": [
+    {
+      "ResourceType": "instance",
+      "Tags": [
+        {
+          "Key": "servicename",
+          "Value": "srv-02"
+        }
+      ]
+    },
+    {
+      "ResourceType": "instance",
+      "Tags": [
+        {
+          "Key": "course",
+          "Value": "devops90"
+        }
+      ]
+    }
+  ],
+  "Monitoring": {
+    "Enabled": true
+  },
+  "UserData": "{userdata}"
+}
