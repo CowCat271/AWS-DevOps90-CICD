@@ -1,10 +1,14 @@
 key_name="${env}-faresahmed-key_ec2_ssh_real"
 key_format="pem"
-security_group_name="${env}-faresahmed-main_sg"
-RULES=(
+ec2_sg_name="${env}-faresahmed-ec2_sg"
+elb_sg_name="${env}-faresahmed-elb_sg"
+# security_group_name="${env}-faresahmed-main_sg"
+EC2_RULES=(
     '{"IpProtocol": "tcp", "FromPort": 22, "ToPort": 22, "IpRanges": [{"CidrIp": "0.0.0.0/0", "Description": "ssh"}]}'
-    '{"IpProtocol": "tcp", "FromPort": 80, "ToPort": 80, "IpRanges": [{"CidrIp": "0.0.0.0/0", "Description": "http for svr-02 load balancer"}]}'
-    '{"IpProtocol": "-1", "UserIdGroupPairs": [{"GroupId": "<your-security-group-id>"}]}'
+    '{"IpProtocol": "tcp", "FromPort": 8002, "ToPort": 8002, "UserIdGroupPairs": [{"GroupId": "<elb-security-group-id>", "Description": "allow srv02 (8002) from ELB"}]}'
+)
+ELB_RULES=(
+    '{"IpProtocol": "tcp", "FromPort": 80, "ToPort": 80, "IpRanges": [{"CidrIp": "0.0.0.0/0", "Description": "http"}]}'
 )
 
 describe_ec2_key(){
@@ -65,47 +69,91 @@ delete_secret(){
 
 ####################################################################################################
 
-create_sg(){
-    echo "Start create_sg ..."
 
-    sg_id=$(aws ec2 describe-security-groups \
-            --filters Name=group-name,Values=${security_group_name} | grep -oP '(?<="GroupId": ")[^"]*' | uniq)
+create_elb_sg(){
+    echo "Start create_elb_sg ..."
 
-    if [ "$sg_id" == "" ]; then
+    elb_sg_id=$(aws ec2 describe-security-groups \
+            --filters Name=group-name,Values=${elb_sg_name} | grep -oP '(?<="GroupId": ")[^"]*' | uniq)
+
+    if [ "$elb_sg_id" == "" ]; then
         
-        echo "Security Group will be created"
+        echo "ELB Security Group will be created"
 
-        sg_id=$(aws ec2 create-security-group --group-name ${security_group_name} \
-        --vpc-id $vpc_id --description 'Main Security Group' )
+        elb_sg_id=$(aws ec2 create-security-group --group-name ${elb_sg_name} \
+        --vpc-id $vpc_id --description 'ELB Security Group' )
         
-        echo $sg_id
+        echo $elb_sg_id
 
-        sg_id=$(echo "$sg_id"| grep -oP '(?<="GroupId": ")[^"]*' | uniq)
-        if [ "$sg_id" == "" ]; then
-            echo "ERROR: couldn't create the security group."
+        elb_sg_id=$(echo "$elb_sg_id"| grep -oP '(?<="GroupId": ")[^"]*' | uniq)
+        if [ "$elb_sg_id" == "" ]; then
+            echo "ERROR: couldn't create the ELB security group."
             exit 1
         fi
 
-        echo $sg_id
+        echo $elb_sg_id
 
-        for rule in "${RULES[@]}"; do
-            # ${var/original_subsctring/new_substring}
-            rule=${rule/<your-security-group-id>/$sg_id}
-
-            echo "Adding rule: $rule"
-            ADD_RULE_OUTPUT=$(aws ec2 authorize-security-group-ingress --group-id $sg_id --ip-permissions "$rule" 2>&1)
+        for elb_rule in "${ELB_RULES[@]}"; do
+            echo "Adding elb rule: $elb_rule"
+            ADD_RULE_OUTPUT=$(aws ec2 authorize-security-group-ingress --group-id $elb_sg_id --ip-permissions "$elb_rule" 2>&1)
 
             if [ $? -ne 0 ]; then
-                echo "ERROR: adding rule '$rule': $ADD_RULE_OUTPUT"
-                echo "deleting the security group ..."
-                aws ec2 delete-security-group --group-id $sg_id
+                echo "ERROR: adding elb rule '$elb_rule': $ADD_RULE_OUTPUT"
+                echo "deleting the elb security group ..."
+                aws ec2 delete-security-group --group-id $elb_sg_id
                 exit 1
             fi
         done
 
     else
-        echo "Security group already exist"
-        echo $sg_id
+        echo "ELB Security group already exist"
+        echo $elb_sg_id
+    fi
+    echo "----------------------------------------"
+}
+
+
+create_ec2_sg(){
+    echo "Start create_ec2_sg ..."
+
+    ec2_sg_id=$(aws ec2 describe-security-groups \
+            --filters Name=group-name,Values=${ec2_sg_name} | grep -oP '(?<="GroupId": ")[^"]*' | uniq)
+
+    if [ "$ec2_sg_id" == "" ]; then
+        
+        echo "EC2 Security Group will be created"
+
+        ec2_sg_id=$(aws ec2 create-security-group --group-name ${ec2_sg_name} \
+        --vpc-id $vpc_id --description 'EC2 Main Security Group' )
+        
+        echo $ec2_sg_id
+
+        ec2_sg_id=$(echo "$ec2_sg_id"| grep -oP '(?<="GroupId": ")[^"]*' | uniq)
+        if [ "$ec2_sg_id" == "" ]; then
+            echo "ERROR: couldn't create the ec2 security group."
+            exit 1
+        fi
+
+        echo $ec2_sg_id
+
+        for ec2_rule in "${EC2_RULES[@]}"; do
+            # ${var/original_subsctring/new_substring}
+            ec2_rule=${ec2_rule/<elb-security-group-id>/$elb_sg_id}
+
+            echo "Adding ec2 rule: $ec2_rule"
+            ADD_RULE_OUTPUT=$(aws ec2 authorize-security-group-ingress --group-id $ec2_sg_id --ip-permissions "$ec2_rule" 2>&1)
+
+            if [ $? -ne 0 ]; then
+                echo "ERROR: adding ec2 sg rule '$rule': $ADD_RULE_OUTPUT"
+                echo "deleting the ec2 security group ..."
+                aws ec2 delete-security-group --group-id $ec2_sg_id
+                exit 1
+            fi
+        done
+
+    else
+        echo "EC2 Security group already exist"
+        echo $ec2_sg_id
     fi
     echo "----------------------------------------"
 }
@@ -133,5 +181,6 @@ else
 fi
 
 # create the security group
-create_sg
+create_elb_sg
+create_ec2_sg
 echo

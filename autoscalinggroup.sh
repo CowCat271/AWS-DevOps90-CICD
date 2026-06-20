@@ -25,7 +25,7 @@ prepare_lt_json() {
     # ${var/original_subsctring/new_substring}
     lt_json=${lt_json/\{key_name\}/$key_name}
     lt_json=${lt_json/\{ami_id\}/$ami_id}
-    lt_json=${lt_json/\{sg_id\}/$sg_id}
+    lt_json=${lt_json/\{ec2_sg_id\}/$ec2_sg_id}
     lt_json=${lt_json/\{userdata\}/$userdata}
 
     # lt_json=$(echo "$lt_json" |  tr -d '\n' | tr -d ' ')
@@ -69,7 +69,7 @@ create_elb() {
         echo "elb will be created"
         
         check_elb=$(aws elbv2 create-load-balancer --name $elb_name --type network \
-            --subnets $subnets_ids_space --security-groups $sg_id)
+            --subnets $subnets_ids_space --security-groups $elb_sg_id)
         if [[ $check_elb != *"LoadBalancerArn"* ]]; then
             echo "Error in creating the elb"
             exit 1
