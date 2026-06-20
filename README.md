@@ -4,11 +4,9 @@ This repository contains the AWS infrastructure automation scripts for the Multi
 
 The project builds a production-ready network and application foundation for the `srv-02` service using AWS CLI automation and launch templates. It supports separate `qc` and `prod` environments with dedicated VPCs, security, auto scaling, load balancing, and Route 53 DNS records.
 
-
 ## Demo
 
 [![Raffle Application Demo](https://img.youtube.com/vi/qz9LUjxudIg/0.jpg)](https://youtu.be/qz9LUjxudIg)
-
 
 ## Repository Scope
 
