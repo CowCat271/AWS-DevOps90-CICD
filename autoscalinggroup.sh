@@ -39,7 +39,7 @@ create_lt() {
     --filters Name=launch-template-name,Values=${lt_name} \
     | grep -oP '(?<="LaunchTemplateId": ")[^"]*')
 
-    if [ "$lt_id" == "" ]; then
+    if [[ "$lt_id" == "" ]]; then
         echo "Launch Template will be created..."
 
         prepare_lt_json
@@ -48,7 +48,7 @@ create_lt() {
             --launch-template-name ${lt_name} \
             --launch-template-data "$lt_json" \
             | grep -oP '(?<="LaunchTemplateId": ")[^"]*')
-        if [ "$lt_id" == "" ]; then
+        if [[ "$lt_id" == "" ]]; then
             echo "ERROR: couldn't create the launch template."
             exit 1
         fi
@@ -64,7 +64,7 @@ create_elb() {
 
     check_elb=$(aws elbv2 describe-load-balancers --region $region --query "LoadBalancers[?LoadBalancerName == '$elb_name']")
     
-    if [ "$check_elb" == "[]" ]; then
+    if [[ "$check_elb" == "[]" ]]; then
         
         echo "elb will be created"
         
@@ -91,7 +91,7 @@ create_target_group() {
     tg_arn=$(aws elbv2 describe-target-groups --region $region \
         --query "TargetGroups[?TargetGroupName == '$asg_name']" | grep -oP '(?<="TargetGroupArn": ")[^"]*')
 
-    if [ "$tg_arn" == "" ]; then
+    if [[ "$tg_arn" == "" ]]; then
         
         echo "target group will be created"
 
@@ -103,7 +103,7 @@ create_target_group() {
             --unhealthy-threshold-count 3 \
             | grep -oP '(?<="TargetGroupArn": ")[^"]*')
         
-        if [ "$tg_arn" == "" ]; then
+        if [[ "$tg_arn" == "" ]]; then
             echo "ERROR: couldn't create the target group"
             exit 1
         fi
@@ -118,7 +118,7 @@ create_listener() {
     ls_arn=$(aws elbv2 create-listener --load-balancer-arn "$elb_arn" \
             --protocol TCP --port 80 \
             --default-actions Type=forward,TargetGroupArn="$tg_arn" | grep -oP '(?<="ListenerArn": ")[^"]*')
-    if [ "$ls_arn" == "" ]; then
+    if [[ "$ls_arn" == "" ]]; then
         echo "ERROR: couldn't create the listener"
         exit 1
     fi
@@ -130,7 +130,7 @@ create_auto_scaling_group() {
     asg_arn=$(aws autoscaling describe-auto-scaling-groups --region $region \
             --query "AutoScalingGroups[?AutoScalingGroupName == '${asg_name}']" | grep -oP '(?<="AutoScalingGroupARN": ")[^"]*')
 
-    if [ "$asg_arn" == "" ]; then
+    if [[ "$asg_arn" == "" ]]; then
         
         echo "asg will be created!"
         
@@ -149,7 +149,7 @@ create_auto_scaling_group() {
             asg_arn=$(aws autoscaling describe-auto-scaling-groups --region $region \
             --query "AutoScalingGroups[?AutoScalingGroupName == '${asg_name}']" | grep -oP '(?<="AutoScalingGroupARN": ")[^"]*')
 
-            if [ "$asg_arn" == "" ]; then
+            if [[ "$asg_arn" == "" ]]; then
                 echo "Error in create the auto scaling group"
                 exit 1
             fi
