@@ -83,7 +83,7 @@ attach_ig_to_vpc() {
         attach_result=$(aws ec2 attach-internet-gateway --internet-gateway-id $igw_id --vpc-id $vpc_id)
 
         # did it attach or not
-        if [ "$attach_result" == "" ]; then
+        if [[ "$attach_result" == "" ]]; then
             echo "Internet gateway attached to the vpc"
         else 
             echo "Internet gateway Already Associated"
