@@ -4,7 +4,7 @@ full_sub_domain="srv2.$dns_name"
 get_hosted_zone_id() {
     hosted_zone_id=$(aws route53 list-hosted-zones-by-name --query "HostedZones[?Name == '$dns_name.']"  | grep -oP '(?<="Id": ")[^"]*' | uniq)
 
-    if [ "$hosted_zone_id" == "" ]; then
+    if [[ "$hosted_zone_id" == "" ]]; then
         echo "Hosted Zone Not Exists ..."
         exit 1
     else
@@ -14,7 +14,7 @@ get_hosted_zone_id() {
 }
 
 create_dns_record() {
-    if [ "$env" != "prod" ]; then
+    if [[ "$env" != "prod" ]]; then
         full_sub_domain="$env-$full_sub_domain"
     fi
 
@@ -47,7 +47,7 @@ EOF
     
     echo "check_record:"
     echo $check_record
-    if [ "$check_record" == "null" ]; then
+    if [[ "$check_record" == "null" ]]; then
         echo "DNS Record will be created ..."
         record_change=$(aws route53 change-resource-record-sets --hosted-zone-id $hosted_zone_id --change-batch $create_change)
         echo $record_change
@@ -56,7 +56,7 @@ EOF
         echo "check record hostzone name"
         echo $check_record_hostzone_name
 
-        if [ "${check_record_hostzone_name}" != "${elb_dns_name}." ]; then
+        if [[ "${check_record_hostzone_name}" != "${elb_dns_name}." ]]; then
             echo "DNS Record pointing to the wrong elb, Recreating..."
             delete_dns_record
 
